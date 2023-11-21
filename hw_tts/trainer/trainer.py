@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from hw_tts.base import BaseTrainer
 from hw_tts.logger.utils import plot_spectrogram_to_buf
-from hw_tts.utils import inf_loop, MetricTracker
+from hw_tts.utils import MetricTracker
 from hw_tts.trainer.eval_texts import EVAL_DATA
 from hw_tts.synthesis import synthesis
 
@@ -32,20 +32,14 @@ class Trainer(BaseTrainer):
             device,
             dataloaders,
             lr_scheduler=None,
-            len_epoch=None,
             skip_oom=True,
     ):
         super().__init__(model, criterion, metrics, optimizer, config, device)
         self.skip_oom = skip_oom
         self.config = config
         self.train_dataloader = dataloaders["train"]
-        if len_epoch is None:
-            # epoch-based training
-            self.len_epoch = len(self.train_dataloader)
-        else:
-            # iteration-based training
-            self.train_dataloader = inf_loop(self.train_dataloader)
-            self.len_epoch = len_epoch
+        self.len_epoch = len(self.train_dataloader)
+
         self.evaluation_dataloaders = {
             k: v for k, v in dataloaders.items() if k != "train"}
         self.lr_scheduler = lr_scheduler
@@ -98,7 +92,7 @@ class Trainer(BaseTrainer):
                     self.logger.warning("OOM on batch. Skipping batch.")
                     for p in self.model.parameters():
                         if p.grad is not None:
-                            del p.grad  # free some memory
+                            del p.grad
                     torch.cuda.empty_cache()
                     continue
                 else:
@@ -115,8 +109,6 @@ class Trainer(BaseTrainer):
                     "learning rate", self.lr_scheduler.get_last_lr()[0]
                 )
                 self._log_scalars(self.train_metrics)
-                # we don't want to reset train metrics at the start of every epoch
-                # because we are interested in recent train metrics
                 last_train_metrics = self.train_metrics.result()
                 self.train_metrics.reset()
             if batch_idx >= self.len_epoch:

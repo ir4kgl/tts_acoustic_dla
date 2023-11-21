@@ -7,26 +7,6 @@ from matplotlib import pyplot as plt
 from dataclasses import dataclass
 
 
-# @dataclass
-# class FastSpeechConfig:
-#     vocab_size = 300
-#     max_seq_len = 3000
-
-#     encoder_dim = 256
-#     encoder_n_layer = 4
-#     encoder_head = 2
-#     encoder_conv1d_filter_size = 1024
-
-#     decoder_dim = 256
-#     decoder_n_layer = 4
-#     decoder_head = 2
-#     decoder_conv1d_filter_size = 1024
-
-#     duration_predictor_filter_size = 256
-#     duration_predictor_kernel_size = 3
-#     dropout = 0.1
-
-
 PAD = 0
 UNK = 1
 BOS = 2
@@ -217,14 +197,14 @@ class Transpose(nn.Module):
 class DurationPredictor(nn.Module):
     """ Duration Predictor """
 
-    def __init__(self, model_config):
+    def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout):
         super(DurationPredictor, self).__init__()
 
-        self.input_size = model_config.encoder_dim
-        self.filter_size = model_config.duration_predictor_filter_size
-        self.kernel = model_config.duration_predictor_kernel_size
-        self.conv_output_size = model_config.duration_predictor_filter_size
-        self.dropout = model_config.dropout
+        self.input_size = encoder_dim
+        self.filter_size = duration_predictor_filter_size
+        self.kernel = duration_predictor_kernel_size
+        self.conv_output_size = duration_predictor_filter_size
+        self.dropout = dropout
 
         self.conv_net = nn.Sequential(
             Transpose(-1, -2),
@@ -264,9 +244,10 @@ class DurationPredictor(nn.Module):
 class LengthRegulator(nn.Module):
     """ Length Regulator """
 
-    def __init__(self, model_config):
+    def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout):
         super(LengthRegulator, self).__init__()
-        self.duration_predictor = DurationPredictor(model_config)
+        self.duration_predictor = DurationPredictor(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
 
     def LR(self, x, duration_predictor_output, mel_max_length=None):
         expand_max_len = torch.max(
@@ -320,32 +301,32 @@ def get_mask_from_lengths(lengths, max_len=None):
 
 
 class Encoder(nn.Module):
-    def __init__(self, model_config):
+    def __init__(self, vocab_size, max_seq_len, encoder_dim, encoder_n_layer, encoder_head, encoder_conv1d_filter_size, dropout):
         super(Encoder, self).__init__()
 
-        len_max_seq = model_config.max_seq_len
+        len_max_seq = max_seq_len
         n_position = len_max_seq + 1
-        n_layers = model_config.encoder_n_layer
+        n_layers = encoder_n_layer
 
         self.src_word_emb = nn.Embedding(
-            model_config.vocab_size,
-            model_config.encoder_dim,
-            padding_idx=model_config.PAD
+            vocab_size,
+            encoder_dim,
+            padding_idx=PAD
         )
 
         self.position_enc = nn.Embedding(
             n_position,
-            model_config.encoder_dim,
-            padding_idx=model_config.PAD
+            encoder_dim,
+            padding_idx=PAD
         )
 
         self.layer_stack = nn.ModuleList([FFTBlock(
-            model_config.encoder_dim,
-            model_config.encoder_conv1d_filter_size,
-            model_config.encoder_head,
-            model_config.encoder_dim // model_config.encoder_head,
-            model_config.encoder_dim // model_config.encoder_head,
-            dropout=model_config.dropout
+            encoder_dim,
+            encoder_conv1d_filter_size,
+            encoder_head,
+            encoder_dim // encoder_head,
+            encoder_dim // encoder_head,
+            dropout=dropout
         ) for _ in range(n_layers)])
 
     def forward(self, src_seq, src_pos, return_attns=False):
@@ -373,27 +354,27 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     """ Decoder """
 
-    def __init__(self, model_config):
+    def __init__(self, max_seq_len, decoder_dim, decoder_n_layer, decoder_head, decoder_conv1d_filter_size, dropout):
 
         super(Decoder, self).__init__()
 
-        len_max_seq = model_config.max_seq_len
+        len_max_seq = max_seq_len
         n_position = len_max_seq + 1
-        n_layers = model_config.decoder_n_layer
+        n_layers = decoder_n_layer
 
         self.position_enc = nn.Embedding(
             n_position,
-            model_config.encoder_dim,
-            padding_idx=model_config.PAD,
+            decoder_dim,
+            padding_idx=PAD,
         )
 
         self.layer_stack = nn.ModuleList([FFTBlock(
-            model_config.encoder_dim,
-            model_config.encoder_conv1d_filter_size,
-            model_config.encoder_head,
-            model_config.encoder_dim // model_config.encoder_head,
-            model_config.encoder_dim // model_config.encoder_head,
-            dropout=model_config.dropout
+            decoder_dim,
+            decoder_conv1d_filter_size,
+            decoder_head,
+            decoder_dim // decoder_head,
+            decoder_dim // decoder_head,
+            dropout=dropout
         ) for _ in range(n_layers)])
 
     def forward(self, enc_seq, enc_pos, return_attns=False):
@@ -421,15 +402,32 @@ class Decoder(nn.Module):
 class FastSpeech(nn.Module):
     """ FastSpeech """
 
-    def __init__(self, model_config, num_mels=80):
+    def __init__(self,
+                 vocab_size=300,
+                 max_seq_len=3000,
+                 encoder_dim=256,
+                 encoder_n_layer=4,
+                 encoder_head=2,
+                 encoder_conv1d_filter_size=1024,
+                 decoder_dim=256,
+                 decoder_n_layer=4,
+                 decoder_head=2,
+                 decoder_conv1d_filter_size=1024,
+                 duration_predictor_filter_size=256,
+                 duration_predictor_kernel_size=3,
+                 dropout=0.1,
+                 num_mels=80):
         super(FastSpeech, self).__init__()
 
-        self.encoder = Encoder(model_config)
-        self.length_regulator = LengthRegulator(model_config)
-        self.decoder = Decoder(model_config)
+        self.encoder = Encoder(vocab_size, max_seq_len,
+                               encoder_dim, encoder_n_layer, encoder_head, encoder_conv1d_filter_size, dropout)
+        self.length_regulator = LengthRegulator(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
+        self.decoder = Decoder(max_seq_len, decoder_dim, decoder_n_layer,
+                               decoder_head, decoder_conv1d_filter_size, dropout)
 
         self.mel_linear = nn.Linear(
-            model_config.decoder_dim, num_mels)
+            decoder_dim, num_mels)
 
     def mask_tensor(self, mel_output, position, mel_max_length):
         lengths = torch.max(position, -1)[0]
