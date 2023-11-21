@@ -31,14 +31,14 @@ from waveglow.mel2samp import files_to_list, MAX_WAV_VALUE
 # from denoiser import Denoiser
 
 
-def inference(mel, waveglow, audio_path, sigma=1.0, sampling_rate=22050):
+def inference(mel, waveglow, sigma=1.0):
     with torch.no_grad():
         audio = waveglow.infer(mel, sigma=sigma)
         audio = audio * MAX_WAV_VALUE
     audio = audio.squeeze()
     audio = audio.cpu().numpy()
     audio = audio.astype('int16')
-    write(audio_path, sampling_rate, audio)
+    return audio
 
 
 def test_speed(mel, waveglow, sigma=1.0, sampling_rate=22050):
