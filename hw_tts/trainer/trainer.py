@@ -10,11 +10,10 @@ from torch.nn.utils import clip_grad_norm_
 from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
-from hw_asr.base import BaseTrainer
-from hw_asr.base.base_text_encoder import BaseTextEncoder
-from hw_asr.logger.utils import plot_spectrogram_to_buf
-from hw_asr.metric.utils import calc_cer, calc_wer
-from hw_asr.utils import inf_loop, MetricTracker
+from hw_tts.base import BaseTrainer
+from hw_tts.base.base_text_encoder import BaseTextEncoder
+from hw_tts.logger.utils import plot_spectrogram_to_buf
+from hw_tts.utils import inf_loop, MetricTracker
 
 
 class Trainer(BaseTrainer):
@@ -228,15 +227,11 @@ class Trainer(BaseTrainer):
         rows = {}
         for pred, target, raw_pred, audio_path in tuples[:examples_to_log]:
             target = BaseTextEncoder.normalize_text(target)
-            wer = calc_wer(target, pred) * 100
-            cer = calc_cer(target, pred) * 100
 
             rows[Path(audio_path).name] = {
                 "target": target,
                 "raw prediction": raw_pred,
                 "predictions": pred,
-                "wer": wer,
-                "cer": cer,
             }
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index"))
