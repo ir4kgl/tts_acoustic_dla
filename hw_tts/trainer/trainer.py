@@ -29,14 +29,12 @@ class Trainer(BaseTrainer):
             config,
             device,
             dataloaders,
-            text_encoder,
             lr_scheduler=None,
             len_epoch=None,
             skip_oom=True,
     ):
         super().__init__(model, criterion, metrics, optimizer, config, device)
         self.skip_oom = skip_oom
-        self.text_encoder = text_encoder
         self.config = config
         self.train_dataloader = dataloaders["train"]
         if len_epoch is None:
@@ -114,7 +112,7 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar(
                     "learning rate", self.lr_scheduler.get_last_lr()[0]
                 )
-                self._log_predictions(**batch)
+                self._log_predictions(batch)
                 self._log_spectrogram(batch["spectrogram"])
                 self._log_scalars(self.train_metrics)
                 # we don't want to reset train metrics at the start of every epoch
@@ -136,17 +134,11 @@ class Trainer(BaseTrainer):
         batch = self.move_batch_to_device(batch, self.device)
         if is_train:
             self.optimizer.zero_grad()
-        outputs = self.model(**batch)
-        if type(outputs) is dict:
-            batch.update(outputs)
-        else:
-            batch["logits"] = outputs
+        outputs = self.model(batch)
+        batch.update(outputs)
 
-        batch["log_probs"] = F.log_softmax(batch["logits"], dim=-1)
-        batch["log_probs_length"] = self.model.transform_input_lengths(
-            batch["spectrogram_length"]
-        )
-        batch["loss"] = self.criterion(**batch)
+        batch["mel_loss"], batch["dp_loss"] = self.criterion(batch)
+        batch["loss"] = batch["mel_loss"] + batch["dp_loss"]
         if is_train:
             batch["loss"].backward()
             self._clip_grad_norm()
@@ -155,8 +147,9 @@ class Trainer(BaseTrainer):
                 self.lr_scheduler.step()
 
         metrics.update("loss", batch["loss"].item())
-        for met in self.metrics:
-            metrics.update(met.name, met(**batch))
+        metrics.update("mel_loss", batch["mel_loss"].item())
+        metrics.update("dp_loss", batch["dp_loss"].item())
+
         return batch
 
     def _evaluation_epoch(self, epoch, part, dataloader):
@@ -182,11 +175,7 @@ class Trainer(BaseTrainer):
             self.writer.set_step(epoch * self.len_epoch, part)
             self._log_scalars(self.evaluation_metrics)
             self._log_predictions(**batch)
-            self._log_spectrogram(batch["spectrogram"])
-
-        # add histogram of model parameters to the tensorboard
-        for name, p in self.model.named_parameters():
-            self.writer.add_histogram(name, p, bins="auto")
+            self._log_spectrogram(batch["mel_output"])
         return self.evaluation_metrics.result()
 
     def _progress(self, batch_idx):
@@ -209,7 +198,6 @@ class Trainer(BaseTrainer):
             *args,
             **kwargs,
     ):
-        # TODO: implement logging of beam search results
         if self.writer is None:
             return
         argmax_inds = log_probs.cpu().argmax(-1).numpy()

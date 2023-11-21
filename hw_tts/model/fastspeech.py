@@ -437,9 +437,9 @@ class FastSpeech(nn.Module):
         mask = mask.unsqueeze(-1).expand(-1, -1, mel_output.size(-1))
         return mel_output.masked_fill(mask, 0.)
 
-    def forward(self, src_seq, src_pos, mel_pos=None, mel_max_length=None, length_target=None, alpha=1.0):
-        x, mask = self.encoder(src_seq, src_pos)
+    def forward(self, batch, alpha=1.0):
+        x, mask = self.encoder(batch["text"], batch["src_pos"])
         x, preds_duration = self.length_regulator(
-            x, alpha, length_target, mel_max_length)
-        x = self.decoder(x, mel_pos)
-        return self.mel_linear(x), preds_duration
+            x, alpha, batch["duration"], batch["mel_max_length"], alpha=alpha)
+        x = self.decoder(x, batch["mel_pos"])
+        return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
