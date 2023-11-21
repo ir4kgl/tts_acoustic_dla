@@ -48,7 +48,8 @@ class Trainer(BaseTrainer):
             # iteration-based training
             self.train_dataloader = inf_loop(self.train_dataloader)
             self.len_epoch = len_epoch
-        self.evaluation_dataloaders = {k: v for k, v in dataloaders.items() if k != "train"}
+        self.evaluation_dataloaders = {
+            k: v for k, v in dataloaders.items() if k != "train"}
         self.lr_scheduler = lr_scheduler
         self.log_step = 50
 
@@ -71,7 +72,8 @@ class Trainer(BaseTrainer):
     def _clip_grad_norm(self):
         if self.config["trainer"].get("grad_norm_clip", None) is not None:
             clip_grad_norm_(
-                self.model.parameters(), self.config["trainer"]["grad_norm_clip"]
+                self.model.parameters(
+                ), self.config["trainer"]["grad_norm_clip"]
             )
 
     def _train_epoch(self, epoch):
@@ -127,7 +129,8 @@ class Trainer(BaseTrainer):
 
         for part, dataloader in self.evaluation_dataloaders.items():
             val_log = self._evaluation_epoch(epoch, part, dataloader)
-            log.update(**{f"{part}_{name}": value for name, value in val_log.items()})
+            log.update(**{f"{part}_{name}": value for name,
+                       value in val_log.items()})
 
         return log
 
@@ -216,8 +219,10 @@ class Trainer(BaseTrainer):
             inds[: int(ind_len)]
             for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
         ]
-        argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
-        argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
+        argmax_texts_raw = [self.text_encoder.decode(
+            inds) for inds in argmax_inds]
+        argmax_texts = [self.text_encoder.ctc_decode(
+            inds) for inds in argmax_inds]
         tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path))
         shuffle(tuples)
         rows = {}
@@ -233,7 +238,8 @@ class Trainer(BaseTrainer):
                 "wer": wer,
                 "cer": cer,
             }
-        self.writer.add_table("predictions", pd.DataFrame.from_dict(rows, orient="index"))
+        self.writer.add_table(
+            "predictions", pd.DataFrame.from_dict(rows, orient="index"))
 
     def _log_spectrogram(self, spectrogram_batch):
         spectrogram = random.choice(spectrogram_batch.cpu())
@@ -248,7 +254,8 @@ class Trainer(BaseTrainer):
         parameters = [p for p in parameters if p.grad is not None]
         total_norm = torch.norm(
             torch.stack(
-                [torch.norm(p.grad.detach(), norm_type).cpu() for p in parameters]
+                [torch.norm(p.grad.detach(), norm_type).cpu()
+                 for p in parameters]
             ),
             norm_type,
         )
@@ -258,4 +265,5 @@ class Trainer(BaseTrainer):
         if self.writer is None:
             return
         for metric_name in metric_tracker.keys():
-            self.writer.add_scalar(f"{metric_name}", metric_tracker.avg(metric_name))
+            self.writer.add_scalar(
+                f"{metric_name}", metric_tracker.avg(metric_name))
