@@ -1,6 +1,6 @@
-from hw_tts.datasets.ljspeech_dataset import LJspeechDataset
+from hw_tts.datasets.ljspeech_dataset import LJSpeechDataset
 
 
 __all__ = [
-    "LJspeechDataset"
+    "LJSpeechDataset"
 ]
