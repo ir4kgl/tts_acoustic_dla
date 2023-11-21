@@ -217,7 +217,7 @@ class Transpose(nn.Module):
 class DurationPredictor(nn.Module):
     """ Duration Predictor """
 
-    def __init__(self, model_config: FastSpeechConfig):
+    def __init__(self, model_config):
         super(DurationPredictor, self).__init__()
 
         self.input_size = model_config.encoder_dim

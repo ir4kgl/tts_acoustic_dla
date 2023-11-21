@@ -37,6 +37,8 @@ from matplotlib import pyplot as plt
 from dataclasses import dataclass
 from collections import OrderedDict
 
+from hw_tts.utils import ROOT_PATH
+import gdown
 
 import sys
 sys.path.append('.')
@@ -46,104 +48,65 @@ logger = logging.getLogger(__name__)
 
 URL_LINKS = {
     "dataset": "https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2",
+    "alignments": "https://github.com/xcmyz/FastSpeech/raw/master/alignments.zip",
+    "mels": "https://drive.google.com/u/0/uc?id=1cJKJTmYd905a-9GFoo5gKjzhKjUVj83j",
+    "waveglow": "https://drive.google.com/u/0/uc?id=1WsibBTsuRg_SF2Z6L6NFRTT-NjEy1oTx",
+    "train_texts": "https://drive.google.com/u/0/uc?id=1-EdH0t0loc6vPiuVtXdhsDtzygWNSNZx"
 }
 
-
-@dataclass
-class TrainConfig:
-    checkpoint_path = "./model_new"
-    logger_path = "./logger"
-    mel_ground_truth = "./mels"
-    alignment_path = "./alignments"
-    data_path = './data/train.txt'
-
-    wandb_project = 'fastspeech_example'
-
-    text_cleaners = ['english_cleaners']
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = 'cuda:0'
-
-    batch_size = 16
-    epochs = 2000
-    n_warm_up_step = 4000
-
-    learning_rate = 1e-3
-    weight_decay = 1e-6
-    grad_clip_thresh = 1.0
-    decay_step = [500000, 1000000, 2000000]
-
-    save_step = 3000
-    log_step = 5
-    clear_Time = 20
-
-    batch_expand_size = 32
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def pad_1D(inputs, PAD=0):
-
     def pad_data(x, length, PAD):
         x_padded = np.pad(x, (0, length - x.shape[0]),
                           mode='constant',
                           constant_values=PAD)
         return x_padded
-
     max_len = max((len(x) for x in inputs))
     padded = np.stack([pad_data(x, max_len, PAD) for x in inputs])
-
     return padded
 
 
 def pad_1D_tensor(inputs, PAD=0):
-
     def pad_data(x, length, PAD):
         x_padded = F.pad(x, (0, length - x.shape[0]))
         return x_padded
-
     max_len = max((len(x) for x in inputs))
     padded = torch.stack([pad_data(x, max_len, PAD) for x in inputs])
-
     return padded
 
 
 def pad_2D(inputs, maxlen=None):
-
     def pad(x, max_len):
         PAD = 0
         if np.shape(x)[0] > max_len:
             raise ValueError("not max_len")
-
         s = np.shape(x)[1]
         x_padded = np.pad(x, (0, max_len - np.shape(x)[0]),
                           mode='constant',
                           constant_values=PAD)
         return x_padded[:, :s]
-
     if maxlen:
         output = np.stack([pad(x, maxlen) for x in inputs])
     else:
         max_len = max(np.shape(x)[0] for x in inputs)
         output = np.stack([pad(x, max_len) for x in inputs])
-
     return output
 
 
 def pad_2D_tensor(inputs, maxlen=None):
-
     def pad(x, max_len):
         if x.size(0) > max_len:
             raise ValueError("not max_len")
-
         s = x.size(1)
         x_padded = F.pad(x, (0, 0, 0, max_len-x.size(0)))
         return x_padded[:, :s]
-
     if maxlen:
         output = torch.stack([pad(x, maxlen) for x in inputs])
     else:
         max_len = max(x.size(0) for x in inputs)
         output = torch.stack([pad(x, max_len) for x in inputs])
-
     return output
 
 
@@ -152,43 +115,75 @@ def process_text(train_text_path):
         txt = []
         for line in f.readlines():
             txt.append(line)
-
         return txt
 
 
-def get_data_to_buffer(train_config):
-    buffer = list()
-    text = process_text(train_config.data_path)
-
-    start = time.perf_counter()
-    for i in tqdm(range(len(text))):
-
-        mel_gt_name = os.path.join(
-            train_config.mel_ground_truth, "ljspeech-mel-%05d.npy" % (i+1))
-        mel_gt_target = np.load(mel_gt_name)
-        duration = np.load(os.path.join(
-            train_config.alignment_path, str(i)+".npy"))
-        character = text[i][0:len(text[i])-1]
-        character = np.array(
-            text_to_sequence(character, train_config.text_cleaners))
-
-        character = torch.from_numpy(character)
-        duration = torch.from_numpy(duration)
-        mel_gt_target = torch.from_numpy(mel_gt_target)
-
-        buffer.append({"text": character, "duration": duration,
-                       "mel_target": mel_gt_target})
-
-    end = time.perf_counter()
-    print("cost {:.2f}s to load all data into buffer.".format(end-start))
-
-    return buffer
-
-
 class BufferDataset(Dataset):
-    def __init__(self, train_config):
-        self.buffer = get_data_to_buffer(train_config)
+    def __init__(self, data_dir=None, alignments_dir=None, mels_dir=None):
+        if data_dir is None:
+            pass
+
+        self._data_dir_ = data_dir
+        if alignments_dir is None:
+            alignments_dir = ROOT_PATH / "data" / "datasets" / "LJspeech" / "alignments"
+            alignments_dir.mkdir()
+            self._alignments_dir_ = alignments_dir
+            arch_path = self._alignments_dir_ / f"alignments.zip"
+            print(f"Loading alignments")
+            download_file(URL_LINKS["alignments"], arch_path)
+            shutil.unpack_archive(arch_path, self._alignments_dir_)
+            for fpath in (self._alignments_dir_ / "alignments").iterdir():
+                shutil.move(str(fpath), str(
+                    self._alignments_dir_ / fpath.name))
+            os.remove(str(arch_path))
+            shutil.rmtree(str(self._alignments_dir_ / "alignments"))
+        self._alignments_dir_ = alignments_dir
+
+        if mels_dir is None:
+            mels_dir = ROOT_PATH / "data" / "datasets" / "LJspeech" / "mels"
+            mels_dir.mkdir()
+            self._mels_dir_ = mels_dir
+            arch_path = self._mels_dir_ / f"mel.tar.gz"
+            print(f"Loading mels")
+            gdown.download(URL_LINKS["mels"], arch_path, quiet=True)
+            shutil.unpack_archive(arch_path, self._mels_dir_)
+            for fpath in (self._mels_dir_ / "mels").iterdir():
+                shutil.move(str(fpath), str(
+                    self._mels_dir_ / fpath.name))
+            os.remove(str(arch_path))
+            shutil.rmtree(str(self._mels_dir_ / "mels"))
+        self._mels_dir_ = mels_dir
+
+        self.buffer = self.get_data_to_buffer()
         self.length_dataset = len(self.buffer)
+
+    def get_data_to_buffer(self):
+        buffer = list()
+        text = process_text(self._data_dir_)
+
+        start = time.perf_counter()
+        for i in tqdm(range(len(text))):
+
+            mel_gt_name = os.path.join(
+                self._mels_dir_, "ljspeech-mel-%05d.npy" % (i+1))
+            mel_gt_target = np.load(mel_gt_name)
+            duration = np.load(os.path.join(
+                self._alignments_dir_, str(i)+".npy"))
+            character = text[i][0:len(text[i])-1]
+            character = np.array(
+                text_to_sequence(character, ['english_cleaners']))
+
+            character = torch.from_numpy(character)
+            duration = torch.from_numpy(duration)
+            mel_gt_target = torch.from_numpy(mel_gt_target)
+
+            buffer.append({"text": character, "duration": duration,
+                           "mel_target": mel_gt_target})
+
+        end = time.perf_counter()
+        print("cost {:.2f}s to load all data into buffer.".format(end-start))
+
+        return buffer
 
     def __len__(self):
         return self.length_dataset
@@ -242,14 +237,15 @@ def collate_fn_tensor(batch):
     len_arr = np.array([d["text"].size(0) for d in batch])
     index_arr = np.argsort(-len_arr)
     batchsize = len(batch)
-    real_batchsize = batchsize // train_config.batch_expand_size
+    batch_expand_size = 32
+    real_batchsize = batchsize // batch_expand_size
 
     cut_list = list()
-    for i in range(train_config.batch_expand_size):
+    for i in range(batch_expand_size):
         cut_list.append(index_arr[i*real_batchsize:(i+1)*real_batchsize])
 
     output = list()
-    for i in range(train_config.batch_expand_size):
+    for i in range(batch_expand_size):
         output.append(reprocess_tensor(batch, cut_list[i]))
 
     return output
