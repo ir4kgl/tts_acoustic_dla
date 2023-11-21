@@ -2,7 +2,7 @@ import logging
 import logging.config
 from pathlib import Path
 
-from hw_asr.utils import read_json, ROOT_PATH
+from hw_tts.utils import read_json, ROOT_PATH
 
 
 def setup_logging(
@@ -12,7 +12,8 @@ def setup_logging(
     Setup logging configuration
     """
     if log_config is None:
-        log_config = str(ROOT_PATH / "hw_asr" / "logger" / "logger_config.json")
+        log_config = str(ROOT_PATH / "hw_asr" /
+                         "logger" / "logger_config.json")
     log_config = Path(log_config)
     if log_config.is_file():
         config = read_json(log_config)
@@ -24,6 +25,7 @@ def setup_logging(
         logging.config.dictConfig(config)
     else:
         print(
-            "Warning: logging configuration file is not found in {}.".format(log_config)
+            "Warning: logging configuration file is not found in {}.".format(
+                log_config)
         )
         logging.basicConfig(level=default_level)

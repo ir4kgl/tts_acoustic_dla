@@ -40,16 +40,11 @@ class Trainer(BaseTrainer):
         self.train_dataloader = dataloaders["train"]
         self.len_epoch = len(self.train_dataloader)
 
-        self.evaluation_dataloaders = {
-            k: v for k, v in dataloaders.items() if k != "train"}
         self.lr_scheduler = lr_scheduler
         self.log_step = 50
 
         self.train_metrics = MetricTracker(
             "loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
-        )
-        self.evaluation_metrics = MetricTracker(
-            "loss", *[m.name for m in self.metrics], writer=self.writer
         )
 
     @staticmethod
@@ -114,12 +109,7 @@ class Trainer(BaseTrainer):
             if batch_idx >= self.len_epoch:
                 break
         log = last_train_metrics
-
-        for part, dataloader in self.evaluation_dataloaders.items():
-            val_log = self._evaluation_epoch(epoch, part, dataloader)
-            log.update(**{f"{part}_{name}": value for name,
-                       value in val_log.items()})
-
+        self._evaluation_epoch()
         return log
 
     def process_batch(self, batch, is_train: bool, metrics: MetricTracker):
@@ -144,7 +134,7 @@ class Trainer(BaseTrainer):
 
         return batch
 
-    def _evaluation_epoch(self, epoch, part, dataloader):
+    def _evaluation_epoch(self):
         """
         Validate after training an epoch
 
@@ -152,26 +142,10 @@ class Trainer(BaseTrainer):
         :return: A log that contains information about validation
         """
         self.model.eval()
-        self.evaluation_metrics.reset()
-        with torch.no_grad():
-            for batch_idx, batch in tqdm(
-                    enumerate(dataloader),
-                    desc=part,
-                    total=len(dataloader),
-            ):
-                batch = self.process_batch(
-                    batch,
-                    is_train=False,
-                    metrics=self.evaluation_metrics,
-                )
-            self.writer.set_step(epoch * self.len_epoch, part)
-            self._log_scalars(self.evaluation_metrics)
-            self._log_spectrogram(batch["mel_output"])
         for i, phn in enumerate(EVAL_DATA):
             audio = synthesis(self.model, phn)
             self.writer.add_audio("synthesised_audio",
                                   audio, sample_rate=22050)
-        return self.evaluation_metrics.result()
 
     def _progress(self, batch_idx):
         base = "[{}/{} ({:.0f}%)]"

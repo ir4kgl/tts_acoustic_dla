@@ -4,7 +4,6 @@ from torch import nn
 import math
 import numpy as np
 from matplotlib import pyplot as plt
-from dataclasses import dataclass
 
 
 PAD = 0
@@ -281,7 +280,7 @@ def get_non_pad_mask(seq):
 
 def get_attn_key_pad_mask(seq_k, seq_q):
     ''' For masking out the padding part of key sequence. '''
-    # Expand to fit the shape of key query attention matrix.
+
     len_q = seq_q.size(1)
     padding_mask = seq_k.eq(PAD)
     padding_mask = padding_mask.unsqueeze(

@@ -136,8 +136,6 @@ class ConfigParser:
         logger.setLevel(self.log_levels[verbosity])
         return logger
 
-    # setting read-only attributes
-
     @property
     def config(self):
         return self._config
@@ -163,7 +161,6 @@ class ConfigParser:
             return cls(json.load(f))
 
 
-# helper functions to update config dict with custom cli options
 def _update_config(config, modification):
     if modification is None:
         return config

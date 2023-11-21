@@ -3,8 +3,8 @@ from abc import abstractmethod
 import torch
 from numpy import inf
 
-from hw_asr.base import BaseModel
-from hw_asr.logger import get_visualizer
+from hw_tts.base import BaseModel
+from hw_tts.logger import get_visualizer
 
 
 class BaseTrainer:
@@ -15,7 +15,8 @@ class BaseTrainer:
     def __init__(self, model: BaseModel, criterion, metrics, optimizer, config, device):
         self.device = device
         self.config = config
-        self.logger = config.get_logger("trainer", config["trainer"]["verbosity"])
+        self.logger = config.get_logger(
+            "trainer", config["trainer"]["verbosity"])
 
         self.model = model
         self.criterion = criterion
@@ -145,7 +146,8 @@ class BaseTrainer:
             "monitor_best": self.mnt_best,
             "config": self.config,
         }
-        filename = str(self.checkpoint_dir / "checkpoint-epoch{}.pth".format(epoch))
+        filename = str(self.checkpoint_dir /
+                       "checkpoint-epoch{}.pth".format(epoch))
         if not (only_best and save_best):
             torch.save(state, filename)
             self.logger.info("Saving checkpoint: {} ...".format(filename))
@@ -187,5 +189,6 @@ class BaseTrainer:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
 
         self.logger.info(
-            "Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch)
+            "Checkpoint loaded. Resume training from epoch {}".format(
+                self.start_epoch)
         )
