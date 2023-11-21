@@ -11,7 +11,6 @@ from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
 from hw_tts.base import BaseTrainer
-from hw_tts.base.base_text_encoder import BaseTextEncoder
 from hw_tts.logger.utils import plot_spectrogram_to_buf
 from hw_tts.utils import inf_loop, MetricTracker
 
