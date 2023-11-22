@@ -17,8 +17,8 @@ def synthesis(model, phn, alpha=1.0):
     text = np.stack([text])
     src_pos = np.array([i+1 for i in range(text.shape[1])])
     src_pos = np.stack([src_pos])
-    sequence = torch.from_numpy(text).long().unsqueeze(0).to(device)
-    src_pos = torch.from_numpy(src_pos).long().unsqueeze(0).to(device)
+    sequence = torch.from_numpy(text).long().to(device)
+    src_pos = torch.from_numpy(src_pos).long().to(device)
 
     with torch.no_grad():
         batch = {"text": sequence, "src_pos": src_pos, "duration": None,
