@@ -41,7 +41,7 @@ class Trainer(BaseTrainer):
         self.len_epoch = len(self.train_dataloader)
 
         self.lr_scheduler = lr_scheduler
-        self.log_step = 50
+        self.log_step = 10
 
         self.train_metrics = MetricTracker(
             "loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
