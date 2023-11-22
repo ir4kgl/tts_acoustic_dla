@@ -32,7 +32,7 @@ class Trainer(BaseTrainer):
             device,
             dataloaders,
             lr_scheduler=None,
-            skip_oom=True,
+            skip_oom=False,
     ):
         super().__init__(model, criterion, metrics, optimizer, config, device)
         self.skip_oom = skip_oom
@@ -77,8 +77,6 @@ class Trainer(BaseTrainer):
         for batch_idx, batch in enumerate(
                 tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
         ):
-
-            print("~~~")
             try:
                 batch = self.process_batch(
                     batch,
@@ -96,7 +94,7 @@ class Trainer(BaseTrainer):
                 else:
                     raise e
             self.train_metrics.update("grad norm", self.get_grad_norm())
-            print("|||")
+
             if batch_idx % self.log_step == 0:
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
