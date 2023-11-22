@@ -1,4 +1,4 @@
-from hw_tts.loss import FastSpeechLoss
+from hw_tts.loss.FastSpeechLoss import FastSpeechLoss
 
 __all__ = [
     "FastSpeechLoss"

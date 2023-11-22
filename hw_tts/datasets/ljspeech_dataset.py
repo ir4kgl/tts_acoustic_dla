@@ -20,13 +20,6 @@ sys.path.append('.')
 
 logger = logging.getLogger(__name__)
 
-URL_LINKS = {
-    "dataset": "https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2",
-    "train_texts": "https://drive.google.com/u/0/uc?id=1-EdH0t0loc6vPiuVtXdhsDtzygWNSNZx",
-    "alignments": "https://github.com/xcmyz/FastSpeech/raw/master/alignments.zip",
-    "mels": "https://docs.google.com/uc?export=download&confirm=t&id=1cJKJTmYd905a-9GFoo5gKjzhKjUVj83j",
-}
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
