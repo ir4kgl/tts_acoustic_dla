@@ -12,7 +12,7 @@ WaveGlow = WaveGlow.cuda()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def synthesis(model, phn, alpha=1.0):
+def synthesis(model, phn, alpha=1.0, c_pitch=1.0, c_energy=1.0):
     text = np.array(phn)
     text = np.stack([text])
     src_pos = np.array([i+1 for i in range(text.shape[1])])
@@ -24,6 +24,7 @@ def synthesis(model, phn, alpha=1.0):
         batch = {"text": sequence, "src_pos": src_pos, "duration": None,
                  "pitch": None, "energy": None,
                  "mel_max_len": None, "mel_pos": None}
-        mel = model.forward(batch, alpha=alpha)["mel_output"]
+        mel = model.forward(batch, alpha=alpha, c_pitch=c_pitch, c_energy=c_energy)[
+            "mel_output"]
     mel = mel.contiguous().transpose(1, 2)
     return inference(mel, WaveGlow)

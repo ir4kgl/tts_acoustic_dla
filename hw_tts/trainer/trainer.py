@@ -147,10 +147,23 @@ class Trainer(BaseTrainer):
         :return: A log that contains information about validation
         """
         self.model.eval()
+        configurations = [
+            (1, 1, 1),
+            (1, 1, 1.2),
+            (1, 1, 0.8),
+            (1, 1.2, 1),
+            (1, 0.8, 1),
+            (1.2, 1, 1),
+            (0.8, 1, 1),
+            (1.2, 1.2, 1.2),
+            (0.8, 0.8, 0.8),
+        ]
         for i, phn in enumerate(EVAL_DATA):
-            audio = synthesis(self.model, phn)
-            self.writer.add_audio("synthesised_audio_{}".format(i),
-                                  audio, sample_rate=22050)
+            for (alpha, c_pitch, c_energy) in configurations:
+                audio = synthesis(self.model, phn, alpha=alpha,
+                                  c_pitch=c_pitch, c_energy=c_energy)
+                self.writer.add_audio("synthesised_audio_{}_{}_{}_{}".format(i, alpha, c_pitch, c_energy),
+                                      audio, sample_rate=22050)
 
     def _progress(self, batch_idx):
         base = "[{}/{} ({:.0f}%)]"
