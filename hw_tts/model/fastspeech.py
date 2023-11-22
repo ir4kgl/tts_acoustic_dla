@@ -275,7 +275,7 @@ class LengthRegulator(nn.Module):
 
 class PitchEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=300, pitch_min=0, pitch_max=100):
+                 dropout, n_bins=256, pitch_min=-2.917079304729946, pitch_max=11.391254536985844):
         super(PitchEncoder, self).__init__()
         self.pitch_predictor = DurationPredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
@@ -299,7 +299,7 @@ class PitchEncoder(nn.Module):
 
 class EnergyEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=300, energy_min=0, energy_max=100):
+                 dropout, n_bins=256, energy_min=-1.431044578552246, energy_max=8.184337615966797):
         super(EnergyEncoder, self).__init__()
         self.energy_predictor = DurationPredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)

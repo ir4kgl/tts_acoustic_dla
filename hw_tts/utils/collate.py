@@ -60,6 +60,8 @@ def collate_fn(batch):
     texts = [x["text"] for x in batch]
     mel_targets = [x["mel_target"] for x in batch]
     durations = [x["duration"] for x in batch]
+    pitchs = [x["pitch"] for x in batch]
+    energies = [x["energy"] for x in batch]
 
     length_text = np.array([])
     for text in texts:
@@ -86,9 +88,8 @@ def collate_fn(batch):
     texts = pad_1D_tensor(texts)
     durations = pad_1D_tensor(durations)
     mel_targets = pad_2D_tensor(mel_targets)
-
-    pitch = None
-    energy = None
+    pitch = pad_1D_tensor(pitchs)
+    energy = pad_1D_tensor(energies)
 
     out = {"text": texts,
            "mel_target": mel_targets,
