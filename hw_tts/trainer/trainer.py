@@ -94,6 +94,7 @@ class Trainer(BaseTrainer):
                 else:
                     raise e
             self.train_metrics.update("grad norm", self.get_grad_norm())
+            print(batch_idx, self.log_step, batch_idx % self.log_step, )
             if batch_idx % self.log_step == 0:
                 print("!")
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
