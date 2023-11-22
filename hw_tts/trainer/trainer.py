@@ -145,7 +145,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
         for i, phn in enumerate(EVAL_DATA):
             audio = synthesis(self.model, phn)
-            self.writer.add_audio("synthesised_audio",
+            self.writer.add_audio("synthesised_audio_{}".format(i),
                                   audio, sample_rate=22050)
 
     def _progress(self, batch_idx):
