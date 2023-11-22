@@ -44,7 +44,7 @@ class Trainer(BaseTrainer):
         self.log_step = 10
 
         self.train_metrics = MetricTracker(
-            "loss", "mel_loss", "dp_loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
+            "loss", "mel_loss", "dp_loss", "pitch_loss", "energy_loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
         )
 
     @staticmethod
@@ -52,7 +52,7 @@ class Trainer(BaseTrainer):
         """
         Move all necessary tensors to the HPU
         """
-        for tensor_for_gpu in ["text", "duration", "mel_pos", "src_pos"]:
+        for tensor_for_gpu in ["text", "duration", "pitch", "energy", "mel_pos", "src_pos"]:
             batch[tensor_for_gpu] = batch[tensor_for_gpu].long().to(device)
         batch["mel_target"] = batch["mel_target"].float().to(device)
         return batch
@@ -120,8 +120,10 @@ class Trainer(BaseTrainer):
         outputs = self.model(batch)
         batch.update(outputs)
 
-        batch["mel_loss"], batch["dp_loss"] = self.criterion.forward(batch)
-        batch["loss"] = batch["mel_loss"] + batch["dp_loss"]
+        batch["mel_loss"], batch["dp_loss"], batch["pitch_loss"], batch["energy_loss"] = self.criterion.forward(
+            batch)
+        batch["loss"] = batch["mel_loss"] + batch["dp_loss"] + \
+            batch["pitch_loss"] + batch["energy_loss"]
         if is_train:
             batch["loss"].backward()
             self._clip_grad_norm()
@@ -132,6 +134,8 @@ class Trainer(BaseTrainer):
         metrics.update("loss", batch["loss"].item())
         metrics.update("mel_loss", batch["mel_loss"].item())
         metrics.update("dp_loss", batch["dp_loss"].item())
+        metrics.update("pitch_loss", batch["pitch_loss"].item())
+        metrics.update("energy_loss", batch["energy_loss"].item())
 
         return batch
 

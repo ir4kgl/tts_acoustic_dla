@@ -273,6 +273,78 @@ class LengthRegulator(nn.Module):
             return self.LR(x, (preds_duration * alpha).int(), mel_max_length), preds_duration
 
 
+class PitchEncoder(nn.Module):
+    def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
+                 dropout, n_bins=300, pitch_min=0, pitch_max=100):
+        super(PitchEncoder, self).__init__()
+        self.pitch_predictor = DurationPredictor(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
+        self.pitch_bins = nn.Parameter(
+            torch.exp(torch.linspace(np.log(pitch_min),
+                                     np.log(pitch_max), n_bins - 1)),
+            requires_grad=False,
+        )
+        self.pitch_embedding = nn.Embedding(n_bins, encoder_dim)
+
+    def forward(self, x, c_pitch=1.0, target=None):
+        pred_pitch = c_pitch * self.pitch_predictor(x)
+        if self.training:
+            assert target is not None
+            pitch_embed = self.pitch_embedding(
+                torch.bucketize(target, self.pitch_bins))
+        else:
+            pitch_embed = self.pitch_embedding(
+                torch.bucketize(pred_pitch, self.pitch_bins))
+        return pitch_embed, pred_pitch
+
+
+class EnergyEncoder(nn.Module):
+    def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
+                 dropout, n_bins=300, energy_min=0, energy_max=100):
+        super(EnergyEncoder, self).__init__()
+        self.energy_predictor = DurationPredictor(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
+        self.energy_bins = nn.Parameter(
+            torch.linspace(energy_min, energy_max, n_bins - 1),
+            requires_grad=False,
+        )
+        self.energy_embedding = nn.Embedding(n_bins, encoder_dim)
+
+    def forward(self, x, c_energy=1.0, target=None):
+        pred_energy = c_energy * self.energy_predictor(x)
+        if self.training:
+            assert target is not None
+            energy_embed = self.energy_embedding(
+                torch.bucketize(target, self.energy_bins))
+        else:
+            energy_embed = self.energy_embedding(
+                torch.bucketize(pred_energy, self.energy_bins))
+        return energy_embed, pred_energy
+
+
+class VarianceAdapter(nn.Module):
+
+    def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout):
+        super(VarianceAdapter, self).__init__()
+        self.length_regulator = LengthRegulator(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
+        self.pitch_encoder = PitchEncoder(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
+        self.energy_encoder = EnergyEncoder(
+            encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
+
+    def forward(self, x, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
+        x, pred_duration = self.length_regulator(
+            x, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
+        pitch_embed, pred_pitch = self.pitch_encoder(
+            x, c_pitch=c_pitch, target=pitch_target)
+        energy_embed, pred_energy = self.energy_encoder(
+            x, c_energy=c_energy, target=energy_target)
+        x = x + pitch_embed
+        x = x + energy_embed
+        return (x, pred_duration, pred_pitch, pred_energy)
+
+
 def get_non_pad_mask(seq):
     assert seq.dim() == 2
     return seq.ne(PAD).type(torch.float).unsqueeze(-1)
@@ -420,7 +492,7 @@ class FastSpeech(nn.Module):
 
         self.encoder = Encoder(vocab_size, max_seq_len,
                                encoder_dim, encoder_n_layer, encoder_head, encoder_conv1d_filter_size, dropout)
-        self.length_regulator = LengthRegulator(
+        self.var_adapter = VarianceAdapter(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
         self.decoder = Decoder(max_seq_len, decoder_dim, decoder_n_layer,
                                decoder_head, decoder_conv1d_filter_size, dropout)
@@ -434,12 +506,15 @@ class FastSpeech(nn.Module):
         mask = mask.unsqueeze(-1).expand(-1, -1, mel_output.size(-1))
         return mel_output.masked_fill(mask, 0.)
 
-    def forward(self, batch, alpha=1.0):
+    def forward(self, batch, alpha=1.0, c_pitch=1.0, c_energy=1.0):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
-        x, preds_duration = self.length_regulator(
-            x, alpha, batch["duration"], batch["mel_max_len"])
+        x, pred_duration, pred_pitch, pred_energy = self.var_adapter(
+            x, alpha=alpha, c_pitch=c_pitch, c_energy=c_energy, length_target=batch["duration"], mel_max_len=batch["mel_max_len"])
         if batch["mel_pos"] is None:
             batch["mel_pos"] = torch.from_numpy(
                 np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
         x = self.decoder(x, batch["mel_pos"])
-        return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
+        return {"mel_output": self.mel_linear(x),
+                "duration_predictor_output": pred_duration,
+                "pitch_predictor_output": pred_pitch,
+                "energy_predictor_output": pred_energy}
