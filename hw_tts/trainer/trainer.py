@@ -52,8 +52,9 @@ class Trainer(BaseTrainer):
         """
         Move all necessary tensors to the HPU
         """
-        for tensor_for_gpu in ["spectrogram", "text_encoded"]:
-            batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
+        for tensor_for_gpu in ["text", "duration", "mel_pos", "src_pos"]:
+            batch[tensor_for_gpu] = batch[tensor_for_gpu].long().to(device)
+        batch["mel_target"] = batch["mel_target"].float().to(device)
         return batch
 
     def _clip_grad_norm(self):
