@@ -44,7 +44,7 @@ class Trainer(BaseTrainer):
         self.log_step = 10
 
         self.train_metrics = MetricTracker(
-            "loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
+            "loss", "mel_loss", "dp_loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
         )
 
     @staticmethod
