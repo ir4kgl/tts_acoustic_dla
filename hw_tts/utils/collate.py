@@ -56,10 +56,10 @@ def pad_2D_tensor(inputs, maxlen=None):
     return output
 
 
-def reprocess_tensor(batch, cut_list):
-    texts = [batch[ind]["text"] for ind in cut_list]
-    mel_targets = [batch[ind]["mel_target"] for ind in cut_list]
-    durations = [batch[ind]["duration"] for ind in cut_list]
+def collate_fn(batch):
+    texts = [x["text"] for x in batch]
+    mel_targets = [x["mel_target"] for x in batch]
+    durations = [x["duration"] for x in batch]
 
     length_text = np.array([])
     for text in texts:
@@ -95,21 +95,3 @@ def reprocess_tensor(batch, cut_list):
            "mel_max_len": max_mel_len}
 
     return out
-
-
-def collate_fn(batch):
-    len_arr = np.array([d["text"].size(0) for d in batch])
-    index_arr = np.argsort(-len_arr)
-    batchsize = len(batch)
-    batch_expand_size = 32
-    real_batchsize = batchsize // batch_expand_size
-
-    cut_list = list()
-    for i in range(batch_expand_size):
-        cut_list.append(index_arr[i*real_batchsize:(i+1)*real_batchsize])
-
-    output = list()
-    for i in range(batch_expand_size):
-        output.append(reprocess_tensor(batch, cut_list[i]))
-
-    return output
