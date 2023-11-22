@@ -439,6 +439,7 @@ class FastSpeech(nn.Module):
         x, preds_duration = self.length_regulator(
             x, alpha, batch["duration"], batch["mel_max_len"])
         if batch["mel_pos"] is None:
-            batch["mel_pos"] = np.arange(1, x.shape[-2]+1)
+            batch["mel_pos"] = torch.from_numpy(
+                np.arange(1, x.shape[-2]+1)).to(x.device)
         x = self.decoder(x, batch["mel_pos"])
         return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
