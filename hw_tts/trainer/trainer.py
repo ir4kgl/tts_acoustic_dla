@@ -77,7 +77,6 @@ class Trainer(BaseTrainer):
         for batch_idx, batch in enumerate(
                 tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
         ):
-            print(batch_idx, self.log_step)
             try:
                 batch = self.process_batch(
                     batch,
@@ -108,8 +107,7 @@ class Trainer(BaseTrainer):
                 self._log_scalars(self.train_metrics)
                 last_train_metrics = self.train_metrics.result()
                 self.train_metrics.reset()
-            if batch_idx >= self.len_epoch:
-                break
+
         log = last_train_metrics
         self._evaluation_epoch()
         return log
