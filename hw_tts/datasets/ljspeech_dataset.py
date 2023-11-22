@@ -38,15 +38,14 @@ def process_text(train_text_path):
 
 
 class LJSpeechDataset(Dataset):
-    def __init__(self, data_dir=None, alignments_dir=None, mels_dir=None):
-        if data_dir is None:
-            data_dir = ROOT_PATH / "data" / "datasets" / "LJSpeech"
+    def __init__(self, data_dir, alignments_dir=None, mels_dir=None):
+
         self._data_dir_ = data_dir
         if alignments_dir is None:
-            alignments_dir = ROOT_PATH / "data" / "datasets" / "LJSpeech" / "alignments"
+            alignments_dir = os.path.join(data_dir, "alignments/")
         self._alignments_dir_ = alignments_dir
         if mels_dir is None:
-            mels_dir = ROOT_PATH / "data" / "datasets" / "LJSpeech" / "mels"
+            mels_dir = os.path.join(data_dir, "mels/")
         self._mels_dir_ = mels_dir
         self.buffer = self.get_data_to_buffer()
         self.length_dataset = len(self.buffer)
