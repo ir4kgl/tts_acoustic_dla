@@ -21,6 +21,8 @@ def synthesis(model, phn, alpha=1.0):
     src_pos = torch.from_numpy(src_pos).long().to(device)
 
     with torch.no_grad():
-        mel = model.forward(sequence, src_pos, alpha=alpha)["mel_output"]
+        batch = {"text": sequence, "src_pos": src_pos, "duration": None,
+                 "mel_max_len": None, "mel_pos": None}
+        mel = model.forward(batch, alpha=alpha)["mel_output"]
     mel = mel.contiguous().transpose(1, 2)
     return inference(mel, WaveGlow)
