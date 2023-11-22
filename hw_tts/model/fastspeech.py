@@ -259,7 +259,7 @@ class LengthRegulator(nn.Module):
         alignment = torch.from_numpy(alignment).to(x.device)
 
         output = alignment @ x
-        if mel_max_length:
+        if mel_max_length is not None:
             output = F.pad(
                 output, (0, 0, 0, mel_max_length-output.size(1), 0, 0))
         return output
@@ -438,5 +438,7 @@ class FastSpeech(nn.Module):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
         x, preds_duration = self.length_regulator(
             x, alpha, batch["duration"], batch["mel_max_len"])
+        if batch["mel_pos"] is None:
+            batch["mel_pos"] = np.arange(1, x.shape[-2]+1)
         x = self.decoder(x, batch["mel_pos"])
         return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
