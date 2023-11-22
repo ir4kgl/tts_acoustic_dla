@@ -14,7 +14,7 @@ from hw_tts.base import BaseTrainer
 from hw_tts.logger.utils import plot_spectrogram_to_buf
 from hw_tts.utils import MetricTracker
 from hw_tts.trainer.eval_texts import EVAL_DATA
-from hw_tts.synthesis import synthesis
+from hw_tts.synthesis.synthesis import synthesis
 
 
 class Trainer(BaseTrainer):
