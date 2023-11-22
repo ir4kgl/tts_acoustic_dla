@@ -74,7 +74,6 @@ class Trainer(BaseTrainer):
         self.model.train()
         self.train_metrics.reset()
         self.writer.add_scalar("epoch", epoch)
-        self._evaluation_epoch()
         for batch_idx, batch in enumerate(
                 tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
         ):
@@ -111,7 +110,7 @@ class Trainer(BaseTrainer):
                 self.train_metrics.reset()
 
         log = last_train_metrics
-
+        self._evaluation_epoch()
         return log
 
     def process_batch(self, batch, is_train: bool, metrics: MetricTracker):
