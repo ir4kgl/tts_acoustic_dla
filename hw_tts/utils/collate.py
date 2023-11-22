@@ -90,8 +90,9 @@ def collate_fn(batch):
     texts = pad_1D_tensor(texts)
     durations = pad_1D_tensor(durations)
     mel_targets = pad_2D_tensor(mel_targets)
-    pitch = pad_1D_tensor(pitchs, up_max=durations.shape[-1])
-    energy = pad_1D_tensor(energies, up_max=durations.shape[-1])
+    assert (len(durations.shape) == 2)
+    pitch = pad_1D_tensor(pitchs, up_max=durations.sum(dim=0).max())
+    energy = pad_1D_tensor(energies, up_max=durations.sum(dim=0).max())
 
     out = {"text": texts,
            "mel_target": mel_targets,
