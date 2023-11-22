@@ -441,5 +441,7 @@ class FastSpeech(nn.Module):
         if batch["mel_pos"] is None:
             batch["mel_pos"] = torch.from_numpy(
                 np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
+        print(x.shape)
+        print(batch["mel_pos"].shape)
         x = self.decoder(x, batch["mel_pos"])
         return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
