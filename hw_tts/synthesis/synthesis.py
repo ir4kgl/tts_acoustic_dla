@@ -20,6 +20,7 @@ def synthesis(model, phn, alpha=1.0):
     sequence = torch.from_numpy(text).long().to(device)
     src_pos = torch.from_numpy(src_pos).long().to(device)
 
+    print(sequence.shape)
     with torch.no_grad():
         batch = {"text": sequence, "src_pos": src_pos, "duration": None,
                  "mel_max_len": None, "mel_pos": None}
