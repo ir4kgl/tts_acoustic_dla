@@ -1,1 +1,4 @@
 data/
+hw_tts/waveglow/pretrained_model/
+*.pyc
+*.patch
