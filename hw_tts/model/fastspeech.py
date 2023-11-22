@@ -513,7 +513,7 @@ class FastSpeech(nn.Module):
             length_target=batch["duration"],
             pitch_target=batch["pitch"],
             energy_target=batch["energy"],
-            mel_max_len=batch["mel_max_len"])
+            mel_max_length=batch["mel_max_len"])
         if batch["mel_pos"] is None:
             batch["mel_pos"] = torch.from_numpy(
                 np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
