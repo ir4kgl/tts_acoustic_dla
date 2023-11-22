@@ -65,7 +65,7 @@ class LJSpeechDataset(Dataset):
             pitch_gt_target = np.load(pitch_gt_name)
 
             energy_gt_name = os.path.join(
-                self._pitch_dir_, "ljspeech-energy-%05d.npy" % (i+1))
+                self._energy_dir_, "ljspeech-energy-%05d.npy" % (i+1))
             energy_gt_target = np.load(energy_gt_name)
 
             duration = np.load(os.path.join(
