@@ -120,7 +120,7 @@ class Trainer(BaseTrainer):
         outputs = self.model(batch)
         batch.update(outputs)
 
-        batch["mel_loss"], batch["dp_loss"] = self.criterion(batch)
+        batch["mel_loss"], batch["dp_loss"] = self.criterion.forward(batch)
         batch["loss"] = batch["mel_loss"] + batch["dp_loss"]
         if is_train:
             batch["loss"].backward()
