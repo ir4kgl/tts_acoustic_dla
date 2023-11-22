@@ -77,6 +77,8 @@ class Trainer(BaseTrainer):
         for batch_idx, batch in enumerate(
                 tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
         ):
+
+            print("~~~")
             try:
                 batch = self.process_batch(
                     batch,
@@ -94,9 +96,8 @@ class Trainer(BaseTrainer):
                 else:
                     raise e
             self.train_metrics.update("grad norm", self.get_grad_norm())
-            print(batch_idx, self.log_step, batch_idx % self.log_step, )
+            print("|||")
             if batch_idx % self.log_step == 0:
-                print("!")
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
                     "Train Epoch: {} {} Loss: {:.6f}".format(
