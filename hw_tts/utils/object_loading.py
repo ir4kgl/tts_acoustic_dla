@@ -43,8 +43,7 @@ def get_dataloaders(configs: ConfigParser):
         # create dataloader
         dataloader = DataLoader(
             dataset, batch_size=bs, collate_fn=collate_fn,
-            shuffle=shuffle, num_workers=num_workers, drop_last=drop_last,
-            num_workers=0
+            shuffle=shuffle, num_workers=num_workers, drop_last=drop_last
         )
         dataloaders[split] = dataloader
     return dataloaders
