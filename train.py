@@ -61,8 +61,7 @@ def main(config):
         config=config,
         device=device,
         dataloaders=dataloaders,
-        lr_scheduler=lr_scheduler,
-        len_epoch=config["trainer"].get("len_epoch", None)
+        lr_scheduler=lr_scheduler
     )
 
     trainer.train()
