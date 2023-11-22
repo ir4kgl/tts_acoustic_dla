@@ -24,7 +24,8 @@ class WanDBWriter:
             self.wandb = wandb
 
         except ImportError:
-            logger.warning("For use wandb install it via \n\t pip install wandb")
+            logger.warning(
+                "For use wandb install it via \n\t pip install wandb")
 
         self.step = 0
         self.mode = ""
@@ -60,7 +61,7 @@ class WanDBWriter:
         }, step=self.step)
 
     def add_audio(self, scalar_name, audio, sample_rate=None):
-        audio = audio.detach().cpu().numpy().T
+        audio = audio.T
         self.wandb.log({
             self._scalar_name(scalar_name): self.wandb.Audio(audio, sample_rate=sample_rate)
         }, step=self.step)
