@@ -266,7 +266,6 @@ class LengthRegulator(nn.Module):
 
     def forward(self, x, alpha=1.0, target=None, mel_max_length=None):
         preds_duration = self.duration_predictor(x)
-        print(preds_duration)
         if self.training:
             assert target is not None
             return self.LR(x, (target * alpha).int(), mel_max_length), preds_duration
@@ -437,12 +436,10 @@ class FastSpeech(nn.Module):
 
     def forward(self, batch, alpha=1.0):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
-        print(x.shape)
         x, preds_duration = self.length_regulator(
             x, alpha, batch["duration"], batch["mel_max_len"])
-        print(x.shape)
         if batch["mel_pos"] is None:
             batch["mel_pos"] = torch.from_numpy(
-                np.arange(1, x.shape[-2]+1)).to(x.device)
+                np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
         x = self.decoder(x, batch["mel_pos"])
         return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
