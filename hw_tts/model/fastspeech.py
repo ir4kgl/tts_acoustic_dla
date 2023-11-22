@@ -385,8 +385,6 @@ class Decoder(nn.Module):
         non_pad_mask = get_non_pad_mask(enc_pos)
 
         # -- Forward
-        print(enc_seq.shape)
-        print(self.position_enc(enc_pos).shape)
         dec_output = enc_seq + self.position_enc(enc_pos)
 
         for dec_layer in self.layer_stack:
@@ -437,11 +435,14 @@ class FastSpeech(nn.Module):
         return mel_output.masked_fill(mask, 0.)
 
     def forward(self, batch, alpha=1.0):
+        print(x.shape)
         x, mask = self.encoder(batch["text"], batch["src_pos"])
+        print(x.shape)
         x, preds_duration = self.length_regulator(
             x, alpha, batch["duration"], batch["mel_max_len"])
+        print(x.shape)
         if batch["mel_pos"] is None:
             batch["mel_pos"] = torch.from_numpy(
-                np.arange(1, x.shape[-1]+1)).unsqueeze(0).to(x.device)
+                np.arange(1, x.shape[-2]+1)).to(x.device)
         x = self.decoder(x, batch["mel_pos"])
         return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
