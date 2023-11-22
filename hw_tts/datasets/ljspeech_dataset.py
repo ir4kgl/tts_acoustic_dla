@@ -32,7 +32,7 @@ def process_text(train_text_path):
 
 
 class LJSpeechDataset(Dataset):
-    def __init__(self, data_dir, alignments_dir=None, mels_dir=None):
+    def __init__(self, data_dir, alignments_dir=None, mels_dir=None, pitch_dir=None, energy_dir=None):
         self._data_dir_ = Path(data_dir)
         if alignments_dir is None:
             alignments_dir = self._data_dir_ / "alignments/"
@@ -42,7 +42,7 @@ class LJSpeechDataset(Dataset):
         self._mels_dir_ = mels_dir
         if pitch_dir is None:
             pitch_dir = self._data_dir_ / "pitch/"
-        self._pitch_dir_ = mels_dir
+        self._pitch_dir_ = pitch_dir
         if energy_dir is None:
             energy_dir = self._data_dir_ / "energy/"
         self._energy_dir_ = energy_dir
