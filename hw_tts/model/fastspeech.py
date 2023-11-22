@@ -275,12 +275,13 @@ class LengthRegulator(nn.Module):
 
 class PitchEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, pitch_min=-2.917079304729946, pitch_max=11.391254536985844):
+                 dropout, n_bins=256, pitch_min=?, pitch_max=?):
         super(PitchEncoder, self).__init__()
         self.pitch_predictor = DurationPredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
         self.pitch_bins = nn.Parameter(
-            torch.linspace(pitch_min, pitch_max, n_bins - 1),
+            torch.exp(torch.linspace(np.log(pitch_min),
+                      np.log(pitch_max), n_bins - 1)),
             requires_grad=False,
         )
         self.pitch_embedding = nn.Embedding(n_bins, encoder_dim)
@@ -299,7 +300,7 @@ class PitchEncoder(nn.Module):
 
 class EnergyEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, energy_min=-1.431044578552246, energy_max=8.184337615966797):
+                 dropout, n_bins=256, energy_min=?, energy_max=?):
         super(EnergyEncoder, self).__init__()
         self.energy_predictor = DurationPredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
@@ -333,14 +334,14 @@ class VarianceAdapter(nn.Module):
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
 
     def forward(self, x, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
+        x, pred_duration = self.length_regulator(
+            x, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
         pitch_embed, pred_pitch = self.pitch_encoder(
             x, c_pitch=c_pitch, target=pitch_target)
         energy_embed, pred_energy = self.energy_encoder(
             x, c_energy=c_energy, target=energy_target)
         x = x + pitch_embed
         x = x + energy_embed
-        x, pred_duration = self.length_regulator(
-            x, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
         return (x, pred_duration, pred_pitch, pred_energy)
 
 

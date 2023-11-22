@@ -14,11 +14,13 @@ def pad_1D(inputs, PAD=0):
     return padded
 
 
-def pad_1D_tensor(inputs, PAD=0):
+def pad_1D_tensor(inputs, PAD=0, up_max=None):
     def pad_data(x, length, PAD):
         x_padded = F.pad(x, (0, length - x.shape[0]))
         return x_padded
     max_len = max((len(x) for x in inputs))
+    if up_max is not None:
+        max_len = max(max_len, up_max)
     padded = torch.stack([pad_data(x, max_len, PAD) for x in inputs])
     return padded
 
@@ -88,8 +90,8 @@ def collate_fn(batch):
     texts = pad_1D_tensor(texts)
     durations = pad_1D_tensor(durations)
     mel_targets = pad_2D_tensor(mel_targets)
-    pitch = pad_1D_tensor(pitchs)
-    energy = pad_1D_tensor(energies)
+    pitch = pad_1D_tensor(pitchs, up_max=durations.shape[-1])
+    energy = pad_1D_tensor(energies, up_max=durations.shape[-1])
 
     out = {"text": texts,
            "mel_target": mel_targets,
