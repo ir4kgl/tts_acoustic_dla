@@ -12,6 +12,7 @@ import numpy as np
 from hw_tts.utils import ROOT_PATH
 from hw_tts.datasets.text import text_to_sequence
 
+from pathlib import Path
 
 import sys
 sys.path.append('.')
@@ -39,13 +40,12 @@ def process_text(train_text_path):
 
 class LJSpeechDataset(Dataset):
     def __init__(self, data_dir, alignments_dir=None, mels_dir=None):
-
-        self._data_dir_ = data_dir
+        self._data_dir_ = Path(data_dir)
         if alignments_dir is None:
-            alignments_dir = os.path.join(data_dir, "alignments/")
+            alignments_dir = data_dir / "alignments/"
         self._alignments_dir_ = alignments_dir
         if mels_dir is None:
-            mels_dir = os.path.join(data_dir, "mels/")
+            mels_dir = data_dir / "mels/"
         self._mels_dir_ = mels_dir
         self.buffer = self.get_data_to_buffer()
         self.length_dataset = len(self.buffer)
