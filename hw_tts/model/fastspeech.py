@@ -437,6 +437,6 @@ class FastSpeech(nn.Module):
     def forward(self, batch, alpha=1.0):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
         x, preds_duration = self.length_regulator(
-            x, alpha, batch["duration"], batch["mel_max_length"], alpha=alpha)
+            x, alpha, batch["duration"], batch["mel_max_len"], alpha=alpha)
         x = self.decoder(x, batch["mel_pos"])
         return {"mel_output": self.mel_linear(x), "duration_predictor_output": preds_duration}
