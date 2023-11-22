@@ -25,8 +25,7 @@ def get_dataloaders(configs: ConfigParser):
         datasets = []
         for ds in params["datasets"]:
             datasets.append(configs.init_obj(
-                ds, hw_tts.datasets, config_parser=configs,
-                wave_augs=wave_augs, spec_augs=spec_augs))
+                ds, hw_tts.datasets))
         assert len(datasets)
         if len(datasets) > 1:
             dataset = ConcatDataset(datasets)
