@@ -22,6 +22,7 @@ def synthesis(model, phn, alpha=1.0):
 
     with torch.no_grad():
         batch = {"text": sequence, "src_pos": src_pos, "duration": None,
+                 "pitch": None, "energy": None,
                  "mel_max_len": None, "mel_pos": None}
         mel = model.forward(batch, alpha=alpha)["mel_output"]
     mel = mel.contiguous().transpose(1, 2)
