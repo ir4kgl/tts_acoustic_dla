@@ -77,6 +77,7 @@ class Trainer(BaseTrainer):
         for batch_idx, batch in enumerate(
                 tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
         ):
+            print(batch_idx, self.log_step)
             try:
                 batch = self.process_batch(
                     batch,
