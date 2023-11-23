@@ -518,7 +518,11 @@ class FastSpeech(nn.Module):
             batch["mel_pos"] = torch.from_numpy(
                 np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
         x = self.decoder(x, batch["mel_pos"])
-        return {"mel_output": self.mel_linear(x),
+        mel_output = self.mel_linear(x)
+        if self.training:
+            mel_output = self.mask_tensor(
+                mel_output, batch["mel_pos"], batch["mel_max_len"])
+        return {"mel_output": mel_output,
                 "duration_predictor_output": pred_duration,
                 "pitch_predictor_output": pred_pitch,
                 "energy_predictor_output": pred_energy}
