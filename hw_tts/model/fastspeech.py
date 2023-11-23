@@ -340,14 +340,13 @@ class VarianceAdapter(nn.Module):
     def forward(self, x, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
         x, pred_duration = self.length_regulator(
             x, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
-        embeds_mask = get_non_pad_mask(x)
         duration_mask = get_non_pad_mask(pred_duration)
         pitch_embed, pred_pitch = self.pitch_encoder(
             x, mask=duration_mask, c_pitch=c_pitch, target=pitch_target)
         energy_embed, pred_energy = self.energy_encoder(
             x, mask=duration_mask, c_energy=c_energy, target=energy_target)
-        x = x + pitch_embed * embeds_mask
-        x = x + energy_embed * embeds_mask
+        x = x + pitch_embed
+        x = x + energy_embed
         return (x, pred_duration, pred_pitch, pred_energy)
 
 
