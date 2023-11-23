@@ -14,7 +14,7 @@ class FastSpeechLoss():
         duration_predictor_loss = self.l1_loss(batch["duration_predictor_output"],
                                                batch["duration"].float())
         pitch_predictor_loss = self.mse_loss(batch["pitch_predictor_output"],
-                                             batch["pitch"].float())
+                                             batch["pitch"])
         energy_predictor_loss = self.mse_loss(batch["energy_predictor_output"],
-                                              batch["energy"].float())
+                                              batch["energy"])
         return mel_loss, duration_predictor_loss, pitch_predictor_loss, energy_predictor_loss

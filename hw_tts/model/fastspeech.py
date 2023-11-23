@@ -229,7 +229,7 @@ class DurationPredictor(nn.Module):
         self.linear_layer = nn.Linear(self.conv_output_size, 1)
         self.relu = nn.ReLU()
 
-    def forward(self, encoder_output):
+    def forward(self, encoder_output, mask=None):
         encoder_output = self.conv_net(encoder_output)
 
         out = self.linear_layer(encoder_output)
@@ -237,6 +237,8 @@ class DurationPredictor(nn.Module):
         out = out.squeeze()
         if not self.training:
             out = out.unsqueeze(0)
+        if mask is not None:
+            out = out.masked_fill(mask, 0.0)
         return out
 
 
@@ -264,8 +266,8 @@ class LengthRegulator(nn.Module):
                 output, (0, 0, 0, mel_max_length-output.size(1), 0, 0))
         return output
 
-    def forward(self, x, alpha=1.0, target=None, mel_max_length=None):
-        preds_duration = self.duration_predictor(x)
+    def forward(self, x, mask=None, alpha=1.0, target=None, mel_max_length=None):
+        preds_duration = self.duration_predictor(x, mask)
         if self.training:
             assert target is not None
             return self.LR(x, (target * alpha).int(), mel_max_length), preds_duration
@@ -333,9 +335,9 @@ class VarianceAdapter(nn.Module):
         self.energy_encoder = EnergyEncoder(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
 
-    def forward(self, x, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
+    def forward(self, x, mask=None, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
         x, pred_duration = self.length_regulator(
-            x, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
+            x, mask=mask, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
         pitch_embed, pred_pitch = self.pitch_encoder(
             x, c_pitch=c_pitch, target=pitch_target)
         energy_embed, pred_energy = self.energy_encoder(
@@ -509,7 +511,7 @@ class FastSpeech(nn.Module):
     def forward(self, batch, alpha=1.0, c_pitch=1.0, c_energy=1.0):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
         x, pred_duration, pred_pitch, pred_energy = self.var_adapter(
-            x, alpha=alpha, c_pitch=c_pitch, c_energy=c_energy,
+            x, mask=mask, alpha=alpha, c_pitch=c_pitch, c_energy=c_energy,
             length_target=batch["duration"],
             pitch_target=batch["pitch"],
             energy_target=batch["energy"],
