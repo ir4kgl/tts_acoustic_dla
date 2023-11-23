@@ -288,10 +288,7 @@ class PitchEncoder(nn.Module):
 
     def forward(self, x, mask=None, c_pitch=1.0, target=None):
         pred_pitch = c_pitch * self.pitch_predictor(x)
-        if mask is not None:
-            print(mask.shape)
-            print(pred_pitch.shape)
-            pred_pitch *= mask
+
         if self.training:
             assert target is not None
             pitch_embed = self.pitch_embedding(
@@ -316,10 +313,6 @@ class EnergyEncoder(nn.Module):
 
     def forward(self, x, mask=None, c_energy=1.0, target=None):
         pred_energy = c_energy * self.energy_predictor(x)
-        if mask is not None:
-            print(mask.shape)
-            print(pred_energy.shape)
-            pred_energy *= mask
         if self.training:
             assert target is not None
             energy_embed = self.energy_embedding(
