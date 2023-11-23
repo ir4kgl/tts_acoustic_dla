@@ -238,6 +238,7 @@ class DurationPredictor(nn.Module):
         if not self.training:
             out = out.unsqueeze(0)
         if mask is not None:
+            mask = mask.unsqueeze(-1).expand(-1, -1, out.size(-1))
             out = out.masked_fill(mask, 0.0)
         return out
 
@@ -335,13 +336,13 @@ class VarianceAdapter(nn.Module):
         self.energy_encoder = EnergyEncoder(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
 
-    def forward(self, x, mask=None, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
+    def forward(self, x, mask=None, mel_mask=None, alpha=1.0, c_pitch=1.0, c_energy=1.0, length_target=None, pitch_target=None, energy_target=None, mel_max_length=None):
         x, pred_duration = self.length_regulator(
             x, mask=mask, alpha=alpha, target=length_target, mel_max_length=mel_max_length)
         pitch_embed, pred_pitch = self.pitch_encoder(
-            x, c_pitch=c_pitch, target=pitch_target)
+            x, mask=mel_mask, c_pitch=c_pitch, target=pitch_target)
         energy_embed, pred_energy = self.energy_encoder(
-            x, c_energy=c_energy, target=energy_target)
+            x, mask=mel_mask, c_energy=c_energy, target=energy_target)
         x = x + pitch_embed
         x = x + energy_embed
         return (x, pred_duration, pred_pitch, pred_energy)
