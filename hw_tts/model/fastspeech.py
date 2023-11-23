@@ -288,8 +288,8 @@ class PitchEncoder(nn.Module):
         )
         self.pitch_embedding = nn.Embedding(n_bins, encoder_dim)
 
-    def forward(self, x, c_pitch=1.0, target=None):
-        pred_pitch = c_pitch * self.pitch_predictor(x)
+    def forward(self, x, mask=None, c_pitch=1.0, target=None):
+        pred_pitch = c_pitch * self.pitch_predictor(x, mask=mask)
         if self.training:
             assert target is not None
             pitch_embed = self.pitch_embedding(
@@ -312,8 +312,8 @@ class EnergyEncoder(nn.Module):
         )
         self.energy_embedding = nn.Embedding(n_bins, encoder_dim)
 
-    def forward(self, x, c_energy=1.0, target=None):
-        pred_energy = c_energy * self.energy_predictor(x)
+    def forward(self, x, mask=None, c_energy=1.0, target=None):
+        pred_energy = c_energy * self.energy_predictor(x, mask=mask)
         if self.training:
             assert target is not None
             energy_embed = self.energy_embedding(
