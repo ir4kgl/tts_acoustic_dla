@@ -277,7 +277,7 @@ class LengthRegulator(nn.Module):
 
 class PitchEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, pitch_min=0.0, pitch_max=900.):
+                 dropout, n_bins=256, pitch_min=1e-8, pitch_max=900.):
         super(PitchEncoder, self).__init__()
         self.pitch_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
