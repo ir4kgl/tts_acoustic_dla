@@ -12,9 +12,9 @@ class FastSpeechLoss():
         mel_loss = self.l1_loss(batch["mel_output"], batch["mel_target"])
 
         duration_predictor_loss = self.mse_loss(batch["duration_predictor_output"],
-                                               batch["duration"].float())
+                                               torch.log(batch["duration"].float()))
         pitch_predictor_loss = self.mse_loss(batch["pitch_predictor_output"],
-                                             batch["pitch"].float())
+                                             torch.log(batch["pitch"].float()))
         energy_predictor_loss = self.mse_loss(batch["energy_predictor_output"],
-                                              batch["energy"].float())
+                                             torch.log(batch["energy"].float()))
         return mel_loss, duration_predictor_loss, pitch_predictor_loss, energy_predictor_loss
