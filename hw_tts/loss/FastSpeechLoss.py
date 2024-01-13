@@ -9,9 +9,9 @@ class FastSpeechLoss():
         self.l1_loss = nn.L1Loss()
 
     def forward(self, batch):
-        mel_loss = self.mse_loss(batch["mel_output"], batch["mel_target"])
+        mel_loss = self.l1_loss(batch["mel_output"], batch["mel_target"])
 
-        duration_predictor_loss = self.l1_loss(batch["duration_predictor_output"],
+        duration_predictor_loss = self.mse_loss(batch["duration_predictor_output"],
                                                batch["duration"].float())
         pitch_predictor_loss = self.mse_loss(batch["pitch_predictor_output"],
                                              batch["pitch"].float())
