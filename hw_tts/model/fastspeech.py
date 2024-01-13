@@ -285,7 +285,6 @@ class PitchEncoder(nn.Module):
             requires_grad=False,
         )
         self.pitch_embedding = nn.Embedding(n_bins, encoder_dim)
-        # self.pitch_embedding.weight.data.zero_()
 
     def forward(self, x, mask=None, c_pitch=1.0, target=None):
         pred_pitch = self.pitch_predictor(x, mask=mask)
@@ -295,7 +294,7 @@ class PitchEncoder(nn.Module):
             pitch_embed = self.pitch_embedding(
                 torch.bucketize(target, self.pitch_bins))
         else:
-            pred_pitch = c_pitch * pred_pitch
+            pred_pitch = c_pitch * torch.exp(pred_pitch)
             pitch_embed = self.pitch_embedding(
                 torch.bucketize(pred_pitch, self.pitch_bins))
         return pitch_embed, pred_pitch
@@ -312,7 +311,6 @@ class EnergyEncoder(nn.Module):
             requires_grad=False,
         )
         self.energy_embedding = nn.Embedding(n_bins, encoder_dim)
-        # self.energy_embedding.weight.data.zero_()
 
     def forward(self, x,  mask=None,  c_energy=1.0, target=None):
         pred_energy = self.energy_predictor(x, mask=mask)
@@ -321,7 +319,7 @@ class EnergyEncoder(nn.Module):
             energy_embed = self.energy_embedding(
                 torch.bucketize(target, self.energy_bins))
         else:
-            pred_energy = c_energy * pred_energy
+            pred_energy = c_energy * torch.exp(pred_energy)
             energy_embed = self.energy_embedding(
                 torch.bucketize(pred_energy, self.energy_bins))
         return energy_embed, pred_energy
