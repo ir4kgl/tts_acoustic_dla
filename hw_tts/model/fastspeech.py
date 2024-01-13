@@ -514,7 +514,7 @@ class FastSpeech(nn.Module):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
         mel_mask = None
         if batch["mel_pos"] is not None:
-            mel_mask = get_mask_from_lengths(
+            mel_mask = ~get_mask_from_lengths(
                 batch["mel_pos"], batch["mel_max_len"])
 
         x, pred_duration, pred_pitch, pred_energy = self.var_adapter(
