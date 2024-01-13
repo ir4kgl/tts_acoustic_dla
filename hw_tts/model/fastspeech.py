@@ -281,8 +281,7 @@ class PitchEncoder(nn.Module):
         self.pitch_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
         self.pitch_bins = nn.Parameter(
-            torch.exp(torch.linspace(np.log(pitch_min),
-                      np.log(pitch_max), n_bins - 1)),
+            torch.linspace(pitch_min, pitch_max, n_bins - 1),
             requires_grad=False,
         )
         self.pitch_embedding = nn.Embedding(n_bins, encoder_dim)
@@ -309,8 +308,7 @@ class EnergyEncoder(nn.Module):
         self.energy_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
         self.energy_bins = nn.Parameter(
-            torch.exp(torch.linspace(
-                np.log(energy_min), np.log(energy_max), n_bins - 1)),
+            torch.linspace(energy_min, energy_max, n_bins - 1),
             requires_grad=False,
         )
         self.energy_embedding = nn.Embedding(n_bins, encoder_dim)
