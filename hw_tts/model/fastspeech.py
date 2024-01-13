@@ -289,7 +289,7 @@ class PitchEncoder(nn.Module):
         self.pitch_embedding = nn.Embedding(n_bins, encoder_dim)
 
     def forward(self, x, mask=None, c_pitch=1.0, target=None):
-        pred_pitch = c_pitch * self.pitch_predictor(x, mask=mask)
+        pred_pitch = self.pitch_predictor(x, mask=mask)
 
         if self.training:
             assert target is not None
@@ -345,7 +345,7 @@ class VarianceAdapter(nn.Module):
             x, mask=mel_mask, c_pitch=c_pitch, target=pitch_target)
         energy_embed, pred_energy = self.energy_encoder(
             x, mask=mel_mask, c_energy=c_energy, target=energy_target)
-        x = x + pitch_embed
+        # x = x + pitch_embed
         # x = x + energy_embed
         return (x, pred_duration, pred_pitch, pred_energy)
 
