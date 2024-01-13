@@ -276,7 +276,7 @@ class LengthRegulator(nn.Module):
 
 class PitchEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, pitch_min=1e-8, pitch_max=900.):
+                 dropout, n_bins=256, pitch_min=0., pitch_max=1000.):
         super(PitchEncoder, self).__init__()
         self.pitch_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
@@ -294,7 +294,7 @@ class PitchEncoder(nn.Module):
             pitch_embed = self.pitch_embedding(
                 torch.bucketize(target, self.pitch_bins))
         else:
-            pred_pitch = c_pitch * torch.exp(pred_pitch)
+            pred_pitch = c_pitch * torch.expm1(pred_pitch)
             pitch_embed = self.pitch_embedding(
                 torch.bucketize(pred_pitch, self.pitch_bins))
         return pitch_embed, pred_pitch
@@ -302,7 +302,7 @@ class PitchEncoder(nn.Module):
 
 class EnergyEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, energy_min=1e-8, energy_max=900.):
+                 dropout, n_bins=256, energy_min=0., energy_max=1000.):
         super(EnergyEncoder, self).__init__()
         self.energy_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
@@ -319,7 +319,7 @@ class EnergyEncoder(nn.Module):
             energy_embed = self.energy_embedding(
                 torch.bucketize(target, self.energy_bins))
         else:
-            pred_energy = c_energy * torch.exp(pred_energy)
+            pred_energy = c_energy * torch.expm1(pred_energy)
             energy_embed = self.energy_embedding(
                 torch.bucketize(pred_energy, self.energy_bins))
         return energy_embed, pred_energy
@@ -521,8 +521,6 @@ class FastSpeech(nn.Module):
             pitch_target=batch["pitch"],
             energy_target=batch["energy"],
             mel_max_length=batch["mel_max_len"])
-
-
 
         x = self.decoder(x, batch["mel_pos"])
         x = self.mask_tensor(x, batch["mel_pos"], batch["mel_max_len"])

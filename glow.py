@@ -245,7 +245,7 @@ class WaveGlow(torch.nn.Module):
             output = self.WN[k]((audio_0, spect))
             log_s = output[:, n_half:, :]
             b = output[:, :n_half, :]
-            audio_1 = torch.exp(log_s)*audio_1 + b
+            audio_1 = torch.expm1(log_s)*audio_1 + b
             log_s_list.append(log_s)
 
             audio = torch.cat([audio_0, audio_1], 1)
