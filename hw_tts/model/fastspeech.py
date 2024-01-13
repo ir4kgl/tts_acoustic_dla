@@ -343,8 +343,8 @@ class VarianceAdapter(nn.Module):
             x, mask=mel_mask, c_pitch=c_pitch, target=pitch_target)
         energy_embed, pred_energy = self.energy_encoder(
             x, mask=mel_mask, c_energy=c_energy, target=energy_target)
-        x = x + pitch_embed
-        x = x + energy_embed
+        # x = x + pitch_embed
+        # x = x + energy_embed
         return (x, pred_duration, pred_pitch, pred_energy)
 
 
@@ -500,8 +500,7 @@ class FastSpeech(nn.Module):
         self.decoder = Decoder(max_seq_len, decoder_dim, decoder_n_layer,
                                decoder_head, decoder_conv1d_filter_size, dropout)
 
-        self.mel_linear = nn.Linear(
-            decoder_dim, num_mels)
+        self.mel_linear = nn.Linear(decoder_dim, num_mels)
 
     def mask_tensor(self, mel_output, position, mel_max_length):
         lengths = torch.max(position, -1)[0]
