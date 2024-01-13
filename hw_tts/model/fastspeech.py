@@ -349,7 +349,7 @@ class VarianceAdapter(nn.Module):
         x = x + pitch_embed
         energy_embed, pred_energy = self.energy_encoder(
             x, mask=mel_mask, c_energy=c_energy, target=energy_target)
-        x = x + energy_embed
+        # x = x + energy_embed
         return (x, pred_duration, pred_pitch, pred_energy)
 
 
