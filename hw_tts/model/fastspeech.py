@@ -319,7 +319,7 @@ class EnergyEncoder(nn.Module):
             energy_embed = self.energy_embedding(
                 torch.bucketize(target, self.energy_bins))
         else:
-            pred_energy = c_energy * torch.expm1(pred_energy)
+            pred_energy = c_energy * pred_energy
             energy_embed = self.energy_embedding(
                 torch.bucketize(pred_energy, self.energy_bins))
         return energy_embed, pred_energy
