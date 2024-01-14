@@ -515,7 +515,7 @@ class FastSpeech(nn.Module):
                 np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
 
         mask = get_non_pad_mask(batch["mel_pos"])[:,:,0]
-        if not self.training():
+        if not self.training:
             mask = None
         x, pred_duration, pred_pitch, pred_energy = self.var_adapter(
             x, mask, alpha=alpha, c_pitch=c_pitch, c_energy=c_energy,
