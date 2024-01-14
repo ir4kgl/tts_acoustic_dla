@@ -510,20 +510,21 @@ class FastSpeech(nn.Module):
 
     def forward(self, batch, alpha=1.0, c_pitch=1.0, c_energy=1.0):
         x, mask = self.encoder(batch["text"], batch["src_pos"])
-        if batch["mel_pos"] is None:
-            batch["mel_pos"] = torch.from_numpy(
-                np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
 
-        mask = get_non_pad_mask(batch["mel_pos"])[:,:,0]
-        if not self.training:
-            mask = None
+        mask = None
+        if self.training:
+            mask = get_non_pad_mask(batch["mel_pos"])[:,:,0]
+
         x, pred_duration, pred_pitch, pred_energy = self.var_adapter(
             x, mask, alpha=alpha, c_pitch=c_pitch, c_energy=c_energy,
             length_target=batch["duration"],
             pitch_target=batch["pitch"],
             energy_target=batch["energy"],
             mel_max_length=batch["mel_max_len"])
-
+    
+        if batch["mel_pos"] is None:
+            batch["mel_pos"] = torch.from_numpy(
+                np.arange(1, x.shape[-2]+1)).unsqueeze(0).to(x.device)
         x = self.decoder(x, batch["mel_pos"])
         x = self.mask_tensor(x, batch["mel_pos"], batch["mel_max_len"])
         mel_output = self.mel_linear(x)
