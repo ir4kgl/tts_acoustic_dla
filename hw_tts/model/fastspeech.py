@@ -271,7 +271,7 @@ class LengthRegulator(nn.Module):
             assert target is not None
             return self.LR(x, (target * alpha).int(), mel_max_length), preds_duration
         else:
-            return self.LR(x, (preds_duration * alpha).int(), mel_max_length), preds_duration
+            return self.LR(x, (torch.expm1(preds_duration) * alpha).int()), preds_duration
 
 
 class PitchEncoder(nn.Module):
