@@ -276,7 +276,7 @@ class LengthRegulator(nn.Module):
 
 class PitchEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, pitch_min=0., pitch_max=1000.):
+                 dropout, n_bins=256, pitch_min=0., pitch_max=900.):
         super(PitchEncoder, self).__init__()
         self.pitch_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
@@ -302,7 +302,7 @@ class PitchEncoder(nn.Module):
 
 class EnergyEncoder(nn.Module):
     def __init__(self, encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size,
-                 dropout, n_bins=256, energy_min=0., energy_max=1000.):
+                 dropout, n_bins=256, energy_min=0., energy_max=1.):
         super(EnergyEncoder, self).__init__()
         self.energy_predictor = VariancePredictor(
             encoder_dim, duration_predictor_filter_size, duration_predictor_kernel_size, dropout)
@@ -344,7 +344,7 @@ class VarianceAdapter(nn.Module):
         x = x + pitch_embed
         energy_embed, pred_energy = self.energy_encoder(
             x, mask=mask, c_energy=c_energy, target=energy_target)
-        # x = x + energy_embed
+        x = x + energy_embed
         return (x, pred_duration, pred_pitch, pred_energy)
 
 
