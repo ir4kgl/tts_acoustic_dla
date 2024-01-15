@@ -124,8 +124,7 @@ class Trainer(BaseTrainer):
 
         batch["mel_loss"], batch["dp_loss"], batch["pitch_loss"], batch["energy_loss"] = self.criterion.forward(
             batch)
-        batch["loss"] = batch["mel_loss"] + batch["dp_loss"] 
-        # + batch["pitch_loss"] + batch["energy_loss"]
+        batch["loss"] = batch["mel_loss"] + batch["dp_loss"] + batch["pitch_loss"] + batch["energy_loss"]
         if is_train:
             batch["loss"].backward()
             self._clip_grad_norm()
