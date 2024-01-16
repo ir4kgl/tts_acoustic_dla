@@ -34,13 +34,14 @@ class Trainer(BaseTrainer):
             lr_scheduler=None,
             skip_oom=True,
     ):
+        self.lr_scheduler = lr_scheduler
         super().__init__(model, criterion, metrics, optimizer, config, device)
         self.skip_oom = skip_oom
         self.config = config
         self.train_dataloader = dataloaders["train"]
         self.len_epoch = len(self.train_dataloader)
 
-        self.lr_scheduler = lr_scheduler
+        
         self.log_step = 10
 
         self.train_metrics = MetricTracker(
