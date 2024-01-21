@@ -1,82 +1,53 @@
-# ASR project barebones
+# Text-to-Speech project
+
+This repository contains TTS project done as a part of homework #3 for the DLA course at the CS Faculty of HSE. See [wandb report](https://wandb.ai/crimsonsparrow048/tts_acoustic/reports/TTS-Report--Vmlldzo2NTg3NTk0?accessToken=22nd1wlum50hn73n207ddmvwsghltxzraq8vz25nfvjjtnickbc2xnyidpncjlm1). 
 
 ## Installation guide
 
-< Write your installation guide here >
+Clone this repository. Move to corresponding folder and install required packages:
 
 ```shell
+git clone https://github.com/ir4kgl/tts_acoustic_dla
+cd tts_acoustic_dla
 pip install -r ./requirements.txt
 ```
 
-## Recommended implementation order
 
-You might be a little intimidated by the number of folders and classes. Try to follow this steps to gradually undestand
-the workflow.
+## Waveglow model upload
 
-1) Test `hw_asr/tests/test_dataset.py`  and `hw_asr/tests/test_config.py` and make sure everythin works for you
-2) Implement missing functions to fix tests in  `hw_asr\tests\test_text_encoder.py`
-3) Implement missing functions to fix tests in  `hw_asr\tests\test_dataloader.py`
-4) Implement functions in `hw_asr\metric\utils.py`
-5) Implement missing function to run `train.py` with a baseline model
-6) Write your own model and try to overfit it on a single batch
-7) Implement ctc beam search and add metrics to calculate WER and CER over hypothesis obtained from beam search.
-8) ~~Pain and suffering~~ Implement your own models and train them. You've mastered this template when you can tune your
-   experimental setup just by tuning `configs.json` file and running `train.py`
-9) Don't forget to write a report about your work
-10) Get hired by Google the next day
+This project contains acoustic part of TTS only (text to melspec). I do not implement vocoder part here and use trained waveglow model for evaluation (same model used in seminar). So you can run the following code to upload waveglow model and place it in correct directory:  
 
-## Before submitting
-
-0) Make sure your projects run on a new machine after complemeting the installation guide or by 
-   running it in docker container.
-1) Search project for `# TODO: your code here` and implement missing functionality
-2) Make sure all tests work without errors
-   ```shell
-   python -m unittest discover hw_asr/tests
-   ```
-3) Make sure `test.py` works fine and works as expected. You should create files `default_test_config.json` and your
-   installation guide should download your model checpoint and configs in `default_test_model/checkpoint.pth`
-   and `default_test_model/config.json`.
-   ```shell
-   python test.py \
-      -c default_test_config.json \
-      -r default_test_model/checkpoint.pth \
-      -t test_data \
-      -o test_result.json
-   ```
-4) Use `train.py` for training
-
-## Credits
-
-This repository is based on a heavily modified fork
-of [pytorch-template](https://github.com/victoresque/pytorch-template) repository.
-
-## Docker
-
-You can use this project with docker. Quick start:
-
-```bash 
-docker build -t my_hw_asr_image . 
-docker run \
-   --gpus '"device=0"' \
-   -it --rm \
-   -v /path/to/local/storage/dir:/repos/asr_project_template/data/datasets \
-   -e WANDB_API_KEY=<your_wandb_api_key> \
-	my_hw_asr_image python -m unittest 
+```shell
+gdown https://drive.google.com/file/d/1Ojx_cEozcL4Jo6e4GbMONVQ-DLp5x_1L/view?usp=sharing
+mv waveglow_256channels_ljs_v2.pt hw_tts/waveglow/pretrained_model/waveglow_256channels.pt
 ```
 
-Notes:
+Also note that `waveclow` and `audio` folders in this repo is not my work, I used them like in seminar to complete preprocessing of LJSpeech dataset and generating final audios out of my Fastpeech model`s predictions. 
 
-* `-v /out/of/container/path:/inside/container/path` -- bind mount a path, so you wouldn't have to download datasets at
-  the start of every docker run.
-* `-e WANDB_API_KEY=<your_wandb_api_key>` -- set envvar for wandb (if you want to use it). You can find your API key
-  here: https://wandb.ai/authorize
 
-## TODO
+## Checkpoint
 
-These barebones can use more tests. We highly encourage students to create pull requests to add more tests / new
-functionality. Current demands:
+To download the final checkpoint run 
 
-* Tests for beam search
-* README section to describe folders
-* Notebook to show how to work with `ConfigParser` and `config_parser.init_obj(...)`
+```shell
+python3 download_checkpoint.py
+```
+
+it will download final checkpoint in `checkpoints/final_run` folder.
+
+## Run train
+
+To train model simply run
+
+```shell
+python3 train.py --c config.json --r CHECKPOINT.pth
+```
+
+where `config.json` is configuration file with all data, model and trainer parameters and `CHECKPOINT.pth` is an optional argument to continue training starting from a given checkpoint. 
+
+Configuration of my final experiment you can find in the file `configs/final_run_config.json`.
+
+
+Please note that you have to place LJSPeech dataset in current folder to make everything work fine. Also note that LJSpeech dataset should contain `mels/`, `pitch/` and `energy/` folders. Scripts for energiy and pitch calculations are attached (see the report).
+
+
